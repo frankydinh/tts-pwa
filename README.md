@@ -11,7 +11,7 @@ Built with a Monorepo architecture to share types and configurations between the
 ## 🚀 Getting Started
 
 ### Prerequisites
-- Node.js (v18 or higher)
+- Node.js (v20 or higher)
 - NPM or Yarn
 
 ### Installation & Run
