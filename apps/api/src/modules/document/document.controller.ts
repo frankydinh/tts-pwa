@@ -10,11 +10,14 @@ import {
   Logger,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { memoryStorage } from 'multer';
 import { DocumentService } from './document.service';
 import { ParserService } from '../parser/parser.service';
+import { CleanerService } from '../parser/cleaner.service';
 import { TtsService } from '../tts/tts.service';
 import { AudioService } from '../audio/audio.service';
 import { DocumentStatus, UploadResponseDto } from '@tech-audiobook/shared-types';
+import { DocumentResponseDto } from './dto/document-response.dto';
 
 @Controller('documents')
 export class DocumentController {
@@ -23,6 +26,7 @@ export class DocumentController {
   constructor(
     private readonly documentService: DocumentService,
     private readonly parserService: ParserService,
+    private readonly cleanerService: CleanerService,
     private readonly ttsService: TtsService,
     private readonly audioService: AudioService,
   ) {}
@@ -30,6 +34,13 @@ export class DocumentController {
   @Get()
   async getDocuments() {
     return this.documentService.findAll();
+  }
+
+  @Get(':id')
+  async getDocument(@Param('id') id: string): Promise<DocumentResponseDto> {
+    const doc = await this.documentService.findById(id);
+    if (!doc) throw new NotFoundException(`Document ${id} not found`);
+    return doc;
   }
 
   @Get(':id/playlist')
@@ -40,12 +51,17 @@ export class DocumentController {
   }
 
   @Post('upload')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+      limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB
+    }),
+  )
   async uploadDocument(@UploadedFile() file: Express.Multer.File): Promise<UploadResponseDto> {
     if (!file) {
       throw new BadRequestException('No file uploaded');
     }
-    if (!file.originalname.toLowerCase().endsWith('.pdf')) {
+    if (file.mimetype !== 'application/pdf') {
       throw new BadRequestException('Only PDF files are accepted');
     }
 
@@ -69,7 +85,7 @@ export class DocumentController {
 
       // Cleaning
       await this.documentService.updateStatus(documentId, DocumentStatus.CLEANING);
-      const cleanedText = this.parserService.cleanText(rawText);
+      const cleanedText = this.cleanerService.clean(rawText);
 
       // Chunking
       await this.documentService.updateStatus(documentId, DocumentStatus.CHUNKING);
