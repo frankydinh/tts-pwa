@@ -100,11 +100,11 @@ export class CleanerService {
 
   /**
    * Join lines where the break is mid-sentence (PDF hard-wraps long lines).
-   * A line break is considered mid-sentence when:
-   *   - the current line does NOT end with sentence-ending punctuation, OR
-   *   - the next line does NOT start with an uppercase letter.
+   * A line break is joined when:
+   *   - the current line does NOT end with sentence-ending punctuation, AND
+   *   - the next line starts with a lowercase letter (not a new sentence).
    */
   private _joinBrokenLines(text: string): string {
-    return text.replace(/([^\n.!?])\n([^\n])/g, '$1 $2');
+    return text.replace(/(\w)\n([a-z])/g, '$1 $2');
   }
 }

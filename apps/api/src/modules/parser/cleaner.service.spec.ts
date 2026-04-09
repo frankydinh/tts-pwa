@@ -118,8 +118,8 @@ describe('CleanerService', () => {
     it('should NOT join lines where current line ends with a period', () => {
       const input = 'First sentence.\nSecond sentence.';
       const result = service.clean(input);
-      // Ends with period → new sentence → should NOT be joined inline
-      expect(result).not.toBe('First sentence. Second sentence.');
+      // Lines separated by a period should stay on separate lines
+      expect(result).toMatch(/First sentence\.\s*\n\s*Second sentence\./);
     });
   });
 });
