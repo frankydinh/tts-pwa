@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 @Injectable()
 export class ParserService {
@@ -7,8 +7,13 @@ export class ParserService {
    * Extract raw text from a PDF buffer using pdf-parse.
    */
   async extractText(buffer: Buffer): Promise<string> {
-    const data = await pdfParse(buffer);
-    return data.text;
+    const parser = new PDFParse({ data: buffer });
+    try {
+      const result = await parser.getText();
+      return result.text;
+    } finally {
+      await parser.destroy();
+    }
   }
 
   /**
